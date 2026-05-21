@@ -33,7 +33,9 @@ export function RewardCard({ reward, onRedeem, isRedeeming }: RewardCardProps) {
         <div className="flex items-center justify-between mt-3">
           <div>
             <p className="text-sm text-indigo-600 font-medium">
-              {reward.stampRequirement} stamps required
+              {reward.customerStampCount != null
+                ? `${reward.customerStampCount} / ${reward.stampRequirement} stamps`
+                : `${reward.stampRequirement} stamps required`}
             </p>
             <p className="text-xs text-gray-400">
               {expired
@@ -46,7 +48,7 @@ export function RewardCard({ reward, onRedeem, isRedeeming }: RewardCardProps) {
               size="sm"
               onClick={onRedeem}
               isLoading={isRedeeming}
-              disabled={expired}
+              disabled={expired || (reward.customerStampCount != null && reward.customerStampCount < reward.stampRequirement)}
             >
               Redeem
             </Button>

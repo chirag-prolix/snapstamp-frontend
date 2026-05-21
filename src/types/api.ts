@@ -109,6 +109,7 @@ export interface Reward {
   imageUrl: string | null;
   createdAt: string;
   distanceKm?: number;
+  customerStampCount?: number;
 }
 
 export type RedemptionStatus = 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED';
