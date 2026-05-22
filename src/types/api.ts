@@ -45,6 +45,9 @@ export interface MerchantUser extends BaseUser {
   apiKey: string;
   apiSecret?: string;
   webhookUrl?: string | null;
+  trialEndsAt: string;
+  subscriptionExpiresAt: string | null;
+  hasActiveAccess: boolean;
 }
 
 export type AppUser = CustomerUser | MerchantUser;

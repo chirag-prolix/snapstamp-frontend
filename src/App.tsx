@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Spinner } from './components/ui/Spinner';
 import type { ReactNode } from 'react';
+import type { MerchantUser } from './types/api';
 
 // Auth pages
 import LoginPage from './pages/auth/LoginPage';
@@ -58,6 +59,15 @@ function RequireRole({ role: required, children }: { role: string; children: Rea
   return <>{children}</>;
 }
 
+function RequireMerchantAccess({ children }: { children: ReactNode }) {
+  const { user, role } = useAuth();
+  if (role !== 'ROLE_MERCHANT') return <>{children}</>;
+  if (!(user as MerchantUser).hasActiveAccess) {
+    return <Navigate to="/merchant/subscription" replace />;
+  }
+  return <>{children}</>;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -76,11 +86,11 @@ function AppRoutes() {
       <Route path="/customer/profile" element={<RequireRole role="ROLE_CUSTOMER"><CustomerProfilePage /></RequireRole>} />
 
       {/* Merchant */}
-      <Route path="/merchant" element={<RequireRole role="ROLE_MERCHANT"><MerchantDashboard /></RequireRole>} />
-      <Route path="/merchant/rewards" element={<RequireRole role="ROLE_MERCHANT"><MerchantRewardsPage /></RequireRole>} />
-      <Route path="/merchant/stamps" element={<RequireRole role="ROLE_MERCHANT"><IssueStampsPage /></RequireRole>} />
-      <Route path="/merchant/redemptions" element={<RequireRole role="ROLE_MERCHANT"><MerchantRedemptionsPage /></RequireRole>} />
-      <Route path="/merchant/profile" element={<RequireRole role="ROLE_MERCHANT"><MerchantProfilePage /></RequireRole>} />
+      <Route path="/merchant" element={<RequireRole role="ROLE_MERCHANT"><RequireMerchantAccess><MerchantDashboard /></RequireMerchantAccess></RequireRole>} />
+      <Route path="/merchant/rewards" element={<RequireRole role="ROLE_MERCHANT"><RequireMerchantAccess><MerchantRewardsPage /></RequireMerchantAccess></RequireRole>} />
+      <Route path="/merchant/stamps" element={<RequireRole role="ROLE_MERCHANT"><RequireMerchantAccess><IssueStampsPage /></RequireMerchantAccess></RequireRole>} />
+      <Route path="/merchant/redemptions" element={<RequireRole role="ROLE_MERCHANT"><RequireMerchantAccess><MerchantRedemptionsPage /></RequireMerchantAccess></RequireRole>} />
+      <Route path="/merchant/profile" element={<RequireRole role="ROLE_MERCHANT"><RequireMerchantAccess><MerchantProfilePage /></RequireMerchantAccess></RequireRole>} />
       <Route path="/merchant/subscription" element={<RequireRole role="ROLE_MERCHANT"><SubscriptionPage /></RequireRole>} />
       <Route path="/merchant/payments" element={<RequireRole role="ROLE_MERCHANT"><PaymentHistoryPage /></RequireRole>} />
 

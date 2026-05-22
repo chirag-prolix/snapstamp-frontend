@@ -6,6 +6,8 @@ import { AppShell } from '../../components/layout/AppShell';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { useAuth } from '../../contexts/AuthContext';
+import type { MerchantUser } from '../../types/api';
 
 const PLANS = [
   {
@@ -26,9 +28,73 @@ const PLANS = [
   },
 ];
 
+function AccessStatusCard({ merchant }: { merchant: MerchantUser }) {
+  const [now] = useState(Date.now);
+  const trialEndsAt = new Date(merchant.trialEndsAt);
+  const trialDaysLeft = Math.ceil((trialEndsAt.getTime() - now) / 86_400_000);
+  const inTrial = trialDaysLeft > 0;
+
+  if (inTrial && !merchant.subscriptionExpiresAt) {
+    return (
+      <Card>
+        <CardBody>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🎁</span>
+            <div>
+              <p className="font-semibold text-gray-900">Free trial active</p>
+              <p className="text-sm text-gray-500">
+                {trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining — expires {trialEndsAt.toLocaleDateString()}
+              </p>
+            </div>
+            <Badge color="indigo" className="ml-auto">Trial</Badge>
+          </div>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  if (merchant.subscriptionExpiresAt) {
+    const expiresAt = new Date(merchant.subscriptionExpiresAt);
+    const subDaysLeft = Math.ceil((expiresAt.getTime() - now) / 86_400_000);
+    return (
+      <Card>
+        <CardBody>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">✅</span>
+            <div>
+              <p className="font-semibold text-gray-900">Active subscription</p>
+              <p className="text-sm text-gray-500">
+                {subDaysLeft} day{subDaysLeft !== 1 ? 's' : ''} remaining — renews {expiresAt.toLocaleDateString()}
+              </p>
+            </div>
+            <Badge color="green" className="ml-auto">Active</Badge>
+          </div>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardBody>
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">⚠️</span>
+          <div>
+            <p className="font-semibold text-red-700">Trial expired</p>
+            <p className="text-sm text-gray-500">Subscribe below to restore access to all features.</p>
+          </div>
+          <Badge color="red" className="ml-auto">Expired</Badge>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
 export default function SubscriptionPage() {
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('monthly');
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const merchant = user as MerchantUser;
 
   const { data: payments } = useQuery({
     queryKey: ['merchantPayments'],
@@ -80,6 +146,7 @@ export default function SubscriptionPage() {
   return (
     <AppShell title="Subscription">
       <div className="space-y-6 max-w-2xl">
+        <AccessStatusCard merchant={merchant} />
         <Card>
           <CardHeader>
             <p className="font-medium text-gray-700">Choose a plan</p>
