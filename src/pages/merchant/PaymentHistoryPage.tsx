@@ -10,7 +10,13 @@ function formatCurrency(amount: number, currency: string): string {
     style: 'currency',
     currency,
     minimumFractionDigits: 0,
-  }).format(amount / 100); // Razorpay stores amounts in paise
+  }).format(amount);
+}
+
+function planLabel(metadata: Record<string, unknown> | null): string {
+  const plan = metadata?.plan as string | undefined;
+  if (!plan) return 'Subscription';
+  return plan.charAt(0).toUpperCase() + plan.slice(1) + ' Plan';
 }
 
 export default function PaymentHistoryPage() {
@@ -42,8 +48,8 @@ export default function PaymentHistoryPage() {
                         })}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1 capitalize">
-                      {payment.paymentType.toLowerCase()} plan
+                    <p className="text-sm text-gray-500 mt-1">
+                      {planLabel(payment.metadata)}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
