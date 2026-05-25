@@ -19,6 +19,8 @@ type FormData = {
   phoneForBusiness: string;
   website: string;
   webhookUrl: string;
+  latitude: string;
+  longitude: string;
 };
 
 export default function MerchantProfilePage() {
@@ -28,7 +30,7 @@ export default function MerchantProfilePage() {
     queryFn: getMerchantProfile,
   });
 
-  const { register, handleSubmit, reset } = useForm<FormData>();
+  const { register, handleSubmit, reset, setValue } = useForm<FormData>();
 
   useEffect(() => {
     if (profile) reset({
@@ -40,8 +42,20 @@ export default function MerchantProfilePage() {
       phoneForBusiness: profile.phoneForBusiness,
       website: profile.website ?? '',
       webhookUrl: (profile as any).webhookUrl ?? '',
+      latitude: (profile as any).latitude != null && (profile as any).latitude !== 0 ? String((profile as any).latitude) : '',
+      longitude: (profile as any).longitude != null && (profile as any).longitude !== 0 ? String((profile as any).longitude) : '',
     });
   }, [profile, reset]);
+
+  const detectLocation = () => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setValue('latitude', String(pos.coords.latitude));
+        setValue('longitude', String(pos.coords.longitude));
+      },
+      () => toast.error('Location access denied'),
+    );
+  };
 
   const { mutate: save, isPending } = useMutation({
     mutationFn: updateMerchantProfile,
@@ -76,7 +90,11 @@ export default function MerchantProfilePage() {
         <Card>
           <CardHeader><p className="font-medium text-gray-700">Edit details</p></CardHeader>
           <CardBody>
-            <form onSubmit={handleSubmit(d => save(d))} className="space-y-4">
+            <form onSubmit={handleSubmit(({ latitude, longitude, ...rest }) => save({
+              ...rest,
+              ...(latitude !== '' && { latitude: parseFloat(latitude) } as any),
+              ...(longitude !== '' && { longitude: parseFloat(longitude) } as any),
+            }))} className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-700">Business description</label>
                 <textarea
@@ -96,6 +114,22 @@ export default function MerchantProfilePage() {
               </div>
               <Input label="Website" type="url" {...register('website')} placeholder="https://" />
               <Input label="Webhook URL" type="url" {...register('webhookUrl')} placeholder="https://" />
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium text-gray-700">Business location (for nearby rewards)</label>
+                  <button
+                    type="button"
+                    onClick={detectLocation}
+                    className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                  >
+                    📍 Use my current location
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Input label="Latitude" type="number" step="any" {...register('latitude')} placeholder="e.g. 28.6139" />
+                  <Input label="Longitude" type="number" step="any" {...register('longitude')} placeholder="e.g. 77.2090" />
+                </div>
+              </div>
               <div className="flex justify-end">
                 <Button type="submit" isLoading={isPending}>Save changes</Button>
               </div>

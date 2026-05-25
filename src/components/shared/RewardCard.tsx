@@ -18,6 +18,10 @@ interface RewardCardProps {
 
 export function RewardCard({ reward, onRedeem, isRedeeming }: RewardCardProps) {
   const expired = new Date(reward.expiresAt) < new Date();
+  const displayStampCount = reward.customerStampCount != null
+    ? Math.min(reward.customerStampCount, reward.stampRequirement)
+    : null;
+  const hasEnoughStamps = reward.customerStampCount != null && reward.customerStampCount >= reward.stampRequirement;
 
   return (
     <Card>
@@ -33,8 +37,8 @@ export function RewardCard({ reward, onRedeem, isRedeeming }: RewardCardProps) {
         <div className="flex items-center justify-between mt-3">
           <div>
             <p className="text-sm text-indigo-600 font-medium">
-              {reward.customerStampCount != null
-                ? `${reward.customerStampCount} / ${reward.stampRequirement} stamps`
+              {displayStampCount != null
+                ? `${displayStampCount} / ${reward.stampRequirement} stamps`
                 : `${reward.stampRequirement} stamps required`}
             </p>
             <p className="text-xs text-gray-400">
@@ -48,9 +52,9 @@ export function RewardCard({ reward, onRedeem, isRedeeming }: RewardCardProps) {
               size="sm"
               onClick={onRedeem}
               isLoading={isRedeeming}
-              disabled={expired || (reward.customerStampCount != null && reward.customerStampCount < reward.stampRequirement)}
+              disabled={expired || !hasEnoughStamps || !!reward.hasActiveRedemption}
             >
-              Redeem
+              {reward.hasActiveRedemption ? 'Pending' : 'Redeem'}
             </Button>
           )}
         </div>

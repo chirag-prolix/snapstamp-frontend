@@ -113,6 +113,7 @@ export interface Reward {
   createdAt: string;
   distanceKm?: number;
   customerStampCount?: number;
+  hasActiveRedemption?: boolean;
 }
 
 export type RedemptionStatus = 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED';
