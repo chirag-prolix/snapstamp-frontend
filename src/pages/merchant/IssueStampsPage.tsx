@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
+import { Html5Qrcode } from 'html5-qrcode';
 import { issueStamps } from '../../api/merchant';
 import { AppShell } from '../../components/layout/AppShell';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
@@ -31,6 +32,58 @@ type FormData = {
   notes?: string;
   isBonus?: boolean;
 };
+
+function QrScannerModal({ onClose, onScan }: {
+  onClose: () => void;
+  onScan: (phone: string) => void;
+}) {
+  const [error, setError] = useState<string | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const didScan = useRef(false);
+
+  useEffect(() => {
+    const scanner = new Html5Qrcode('qr-reader');
+    scannerRef.current = scanner;
+
+    scanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 240, height: 240 } },
+      (text) => {
+        if (didScan.current) return;
+        didScan.current = true;
+        // normalize: QR may encode "+91XXXXXXXXXX" or just digits
+        const digits = text.replace(/\D/g, '');
+        const phone = text.startsWith('+') ? text : `+91${digits}`;
+        scanner.stop().catch(() => {});
+        onScan(phone);
+      },
+      () => {},
+    ).catch(() => setError('Camera access denied. Please allow camera permissions and try again.'));
+
+    return () => {
+      scanner.stop().catch(() => {});
+    };
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h2 className="font-semibold text-gray-900">Scan Customer QR</h2>
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none cursor-pointer">×</button>
+        </div>
+        <div className="p-4">
+          {error
+            ? <p className="text-sm text-red-500 text-center py-6">{error}</p>
+            : <div id="qr-reader" className="w-full rounded-lg overflow-hidden" />
+          }
+          <p className="text-xs text-gray-400 text-center mt-3">Point the camera at the customer's QR code</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function StampCardPreview({ detail }: { detail: StampCardDetail }) {
   const { stampCard } = detail;
@@ -77,8 +130,9 @@ function StampCardPreview({ detail }: { detail: StampCardDetail }) {
 
 export default function IssueStampsPage() {
   const [result, setResult] = useState<StampCardDetail | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
 
-  const { register, handleSubmit, watch, reset, control, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, watch, reset, control, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema) as unknown as Resolver<FormData>,
     defaultValues: { lookupType: 'phone', count: 1, isBonus: false },
   });
@@ -125,32 +179,44 @@ export default function IssueStampsPage() {
               {lookupType === 'phone' ? (
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium text-gray-700">Phone number</label>
-                  <Controller
-                    name="phone"
-                    control={control}
-                    render={({ field }) => (
-                      <div className={`flex items-center rounded-lg border transition focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}>
-                        <span className="pl-3 pr-2 text-sm text-gray-500 select-none border-r border-gray-300 py-2 font-medium whitespace-nowrap">+91</span>
-                        <input
-                          type="tel"
-                          inputMode="numeric"
-                          maxLength={10}
-                          placeholder="98765 43210"
-                          value={field.value ? field.value.replace(/^\+91/, '') : ''}
-                          onChange={e => {
-                            const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
-                            field.onChange(digits ? `+91${digits}` : '');
-                          }}
-                          className="flex-1 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none bg-transparent rounded-r-lg"
-                        />
-                        {field.value && field.value.replace(/^\+91/, '').length > 0 && (
-                          <span className={`pr-3 text-xs font-medium ${field.value.replace(/^\+91/, '').length === 10 ? 'text-green-500' : 'text-gray-400'}`}>
-                            {field.value.replace(/^\+91/, '').length}/10
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  />
+                  <div className="flex gap-2">
+                    <Controller
+                      name="phone"
+                      control={control}
+                      render={({ field }) => (
+                        <div className={`flex flex-1 items-center rounded-lg border transition focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}>
+                          <span className="pl-3 pr-2 text-sm text-gray-500 select-none border-r border-gray-300 py-2 font-medium whitespace-nowrap">+91</span>
+                          <input
+                            type="tel"
+                            inputMode="numeric"
+                            maxLength={10}
+                            placeholder="98765 43210"
+                            value={field.value ? field.value.replace(/^\+91/, '') : ''}
+                            onChange={e => {
+                              const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                              field.onChange(digits ? `+91${digits}` : '');
+                            }}
+                            className="flex-1 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none bg-transparent rounded-r-lg"
+                          />
+                          {field.value && field.value.replace(/^\+91/, '').length > 0 && (
+                            <span className={`pr-3 text-xs font-medium ${field.value.replace(/^\+91/, '').length === 10 ? 'text-green-500' : 'text-gray-400'}`}>
+                              {field.value.replace(/^\+91/, '').length}/10
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowScanner(true)}
+                      title="Scan customer QR code"
+                      className="shrink-0 flex items-center justify-center w-10 h-10 rounded-lg border border-gray-300 text-gray-500 hover:border-indigo-500 hover:text-indigo-600 transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 4.5A1.5 1.5 0 014.5 3h3A1.5 1.5 0 019 4.5v3A1.5 1.5 0 017.5 9h-3A1.5 1.5 0 013 7.5v-3zM15 4.5A1.5 1.5 0 0116.5 3h3A1.5 1.5 0 0121 4.5v3A1.5 1.5 0 0119.5 9h-3A1.5 1.5 0 0115 7.5v-3zM3 16.5A1.5 1.5 0 014.5 15h3A1.5 1.5 0 019 16.5v3A1.5 1.5 0 017.5 21h-3A1.5 1.5 0 013 19.5v-3zM15 16.5a1.5 1.5 0 011.5-1.5h.75M21 15h-.75M21 21h-6M15 21v-3.75M21 18h-3" />
+                      </svg>
+                    </button>
+                  </div>
                   {errors.phone && <p className="text-xs text-red-600">{errors.phone.message}</p>}
                 </div>
               ) : (
@@ -180,6 +246,18 @@ export default function IssueStampsPage() {
           )}
         </div>
       </div>
+
+      {showScanner && (
+        <QrScannerModal
+          onClose={() => setShowScanner(false)}
+          onScan={(phone) => {
+            setValue('phone', phone, { shouldValidate: true });
+            setValue('lookupType', 'phone');
+            setShowScanner(false);
+            toast.success('Phone number scanned!');
+          }}
+        />
+      )}
     </AppShell>
   );
 }
