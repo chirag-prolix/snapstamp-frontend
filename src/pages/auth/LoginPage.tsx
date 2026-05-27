@@ -38,7 +38,9 @@ export default function LoginPage() {
       setTimeout(() => otpRefs.current[0]?.focus(), 50);
       toast.success('OTP sent to your phone');
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? 'Failed to send OTP');
+      const msg = err?.response?.data?.message ?? 'Failed to send OTP';
+      setPhoneError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
