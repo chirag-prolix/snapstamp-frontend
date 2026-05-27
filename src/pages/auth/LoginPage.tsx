@@ -1,54 +1,106 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { login } from '../../api/auth';
+import { requestPhoneLoginOtp, verifyPhoneLoginOtp } from '../../api/auth';
 import { useAuth } from '../../contexts/AuthContext';
-import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 
-const schema = z.object({
-  email:    z.string().email('Invalid email'),
-  password: z.string().min(1, 'Password required'),
-});
-type FormData = z.infer<typeof schema>;
-
-function EyeIcon({ open }: { open: boolean }) {
-  return open ? (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  ) : (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-      <line x1="1" y1="1" x2="23" y2="23" />
-    </svg>
-  );
-}
-
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false);
   const { login: authLogin } = useAuth();
   const navigate = useNavigate();
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
-    resolver: zodResolver(schema),
-  });
+  const [step, setStep] = useState<'phone' | 'otp'>('phone');
+  const [phone, setPhone] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otpError, setOtpError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [resendSeconds, setResendSeconds] = useState(0);
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const onSubmit = async (data: FormData) => {
+  useEffect(() => {
+    if (resendSeconds <= 0) return;
+    const t = setTimeout(() => setResendSeconds(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendSeconds]);
+
+  const handleSendOtp = async () => {
+    const trimmed = phone.trim();
+    if (!trimmed) { setPhoneError('Phone number is required'); return; }
+    if (!/^\+?[1-9]\d{7,14}$/.test(trimmed)) { setPhoneError('Enter a valid phone number'); return; }
+    setPhoneError('');
+    setIsLoading(true);
     try {
-      const res = await login(data.email, data.password);
+      await requestPhoneLoginOtp(trimmed);
+      setStep('otp');
+      setResendSeconds(30);
+      setTimeout(() => otpRefs.current[0]?.focus(), 50);
+      toast.success('OTP sent to your phone');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Failed to send OTP');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerify = async () => {
+    const code = otp.join('');
+    if (code.length < 6) { setOtpError('Enter the 6-digit OTP'); return; }
+    setOtpError('');
+    setIsLoading(true);
+    try {
+      const res = await verifyPhoneLoginOtp(phone.trim(), code);
       authLogin(res);
       const r = res.user.roles[0];
       if (r === 'ROLE_MERCHANT') navigate('/merchant');
       else if (r === 'ROLE_ADMIN') navigate('/admin');
       else navigate('/customer');
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? 'Login failed');
+      const msg = err?.response?.data?.message ?? 'Invalid OTP';
+      setOtpError(msg);
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (resendSeconds > 0) return;
+    setIsLoading(true);
+    try {
+      await requestPhoneLoginOtp(phone.trim());
+      setOtp(['', '', '', '', '', '']);
+      setOtpError('');
+      setResendSeconds(30);
+      otpRefs.current[0]?.focus();
+      toast.success('OTP resent');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Failed to resend OTP');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d?$/.test(value)) return;
+    const next = [...otp];
+    next[index] = value.slice(-1);
+    setOtp(next);
+    setOtpError('');
+    if (value && index < 5) otpRefs.current[index + 1]?.focus();
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    const digits = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (digits.length === 6) {
+      setOtp(digits.split(''));
+      otpRefs.current[5]?.focus();
     }
   };
 
@@ -84,54 +136,120 @@ export default function LoginPage() {
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-2xl shadow-black/40 overflow-hidden">
-
-          {/* Card top accent bar */}
           <div className="h-1 w-full bg-linear-to-r from-indigo-500 via-violet-500 to-purple-500" />
 
           <div className="p-8">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Welcome back</h2>
-              <p className="text-sm text-gray-500 mt-1">Enter your credentials to continue</p>
-            </div>
+            {step === 'phone' ? (
+              <>
+                <div className="mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900">Welcome back</h2>
+                  <p className="text-sm text-gray-500 mt-1">Enter your mobile number to receive an OTP</p>
+                </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <Input label="Email" type="email" {...register('email')} error={errors.email?.message} />
+                <form onSubmit={e => { e.preventDefault(); handleSendOtp(); }} className="space-y-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium text-gray-700">Mobile number</label>
+                    <div className={`flex items-center rounded-lg border transition focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 ${phoneError ? 'border-red-500' : 'border-gray-300'}`}>
+                      <span className="pl-3 pr-2 text-sm text-gray-500 select-none border-r border-gray-300 py-2 font-medium">+91</span>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        placeholder="98765 43210"
+                        value={phone.startsWith('+91') ? phone.slice(3) : phone}
+                        onChange={e => {
+                          const raw = e.target.value.replace(/\D/g, '').slice(0, 10);
+                          setPhone(raw ? `+91${raw}` : '');
+                          setPhoneError('');
+                        }}
+                        className="flex-1 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none bg-transparent rounded-r-lg"
+                        autoFocus
+                      />
+                    </div>
+                    {phoneError && <p className="text-xs text-red-600">{phoneError}</p>}
+                  </div>
 
-              <div className="relative">
-                <Input
-                  label="Password"
-                  type={showPassword ? 'text' : 'password'}
-                  {...register('password')}
-                  error={errors.password?.message}
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(v => !v)}
-                  className="absolute right-3 top-8.5 text-gray-400 hover:text-gray-600 transition-colors"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  <EyeIcon open={showPassword} />
-                </button>
-              </div>
+                  <div className="pt-1">
+                    <Button
+                      type="submit"
+                      isLoading={isLoading}
+                      size="lg"
+                      className="w-full relative overflow-hidden group hover:shadow-xl hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      {!isLoading && (
+                        <span aria-hidden className="absolute inset-0 -translate-x-full -skew-x-12 bg-white/20 group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out" />
+                      )}
+                      Send OTP
+                    </Button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <>
+                <div className="mb-6">
+                  <button
+                    type="button"
+                    onClick={() => { setStep('phone'); setOtp(['', '', '', '', '', '']); setOtpError(''); }}
+                    className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 mb-4 font-medium"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                      <path d="M19 12H5M12 5l-7 7 7 7" />
+                    </svg>
+                    Change number
+                  </button>
+                  <h2 className="text-xl font-semibold text-gray-900">Enter OTP</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Sent to <span className="font-medium text-gray-700">{phone}</span>
+                  </p>
+                </div>
 
-              <div className="pt-1">
-                <Button
-                  type="submit"
-                  isLoading={isSubmitting}
-                  size="lg"
-                  className="w-full relative overflow-hidden group hover:shadow-xl hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  {!isSubmitting && (
-                    <span
-                      aria-hidden
-                      className="absolute inset-0 -translate-x-full -skew-x-12 bg-white/20 group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out"
-                    />
-                  )}
-                  Sign in
-                </Button>
-              </div>
-            </form>
+                <form onSubmit={e => { e.preventDefault(); handleVerify(); }} className="space-y-5">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2 justify-between" onPaste={handleOtpPaste}>
+                      {otp.map((digit, i) => (
+                        <input
+                          key={i}
+                          ref={el => { otpRefs.current[i] = el; }}
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={1}
+                          value={digit}
+                          onChange={e => handleOtpChange(i, e.target.value)}
+                          onKeyDown={e => handleOtpKeyDown(i, e)}
+                          className={`w-12 h-14 text-center text-xl font-bold rounded-xl border-2 outline-none transition-all
+                            focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200
+                            ${otpError ? 'border-red-400 bg-red-50' : digit ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 bg-gray-50'}
+                          `}
+                        />
+                      ))}
+                    </div>
+                    {otpError && <p className="text-xs text-red-600">{otpError}</p>}
+                  </div>
+
+                  <Button
+                    type="submit"
+                    isLoading={isLoading}
+                    size="lg"
+                    className="w-full relative overflow-hidden group hover:shadow-xl hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    {!isLoading && (
+                      <span aria-hidden className="absolute inset-0 -translate-x-full -skew-x-12 bg-white/20 group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out" />
+                    )}
+                    Verify & Sign in
+                  </Button>
+
+                  <p className="text-center text-sm text-gray-500">
+                    Didn't receive it?{' '}
+                    {resendSeconds > 0 ? (
+                      <span className="text-gray-400">Resend in {resendSeconds}s</span>
+                    ) : (
+                      <button type="button" onClick={handleResend} className="text-indigo-600 font-medium hover:underline">
+                        Resend OTP
+                      </button>
+                    )}
+                  </p>
+                </form>
+              </>
+            )}
 
             <div className="mt-6 pt-6 border-t border-gray-100 text-center">
               <p className="text-sm text-gray-500">
