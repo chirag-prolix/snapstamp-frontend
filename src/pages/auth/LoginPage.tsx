@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { GoogleLogin } from '@react-oauth/google';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { requestPhoneLoginOtp, verifyPhoneLoginOtp } from '../../api/auth';
+import { requestPhoneLoginOtp, verifyPhoneLoginOtp, googleLogin } from '../../api/auth';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../../components/ui/Button';
 
@@ -249,6 +250,40 @@ export default function LoginPage() {
                   </p>
                 </form>
               </>
+            )}
+
+            {step === 'phone' && (
+              <div className="mt-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px bg-gray-200" />
+                  <span className="text-xs text-gray-400 font-medium">or continue with</span>
+                  <div className="flex-1 h-px bg-gray-200" />
+                </div>
+                <div className="mt-4 flex justify-center">
+                  <GoogleLogin
+                    onSuccess={async ({ credential }) => {
+                      if (!credential) return;
+                      try {
+                        const res = await googleLogin(credential);
+                        authLogin(res);
+                        const r = res.user.roles[0];
+                        if (r === 'ROLE_MERCHANT') navigate('/merchant');
+                        else if (r === 'ROLE_ADMIN') navigate('/admin');
+                        else navigate('/customer');
+                      } catch (err) {
+                        const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+                        toast.error(msg ?? 'Google sign-in failed');
+                      }
+                    }}
+                    onError={() => toast.error('Google sign-in failed')}
+                    theme="outline"
+                    size="large"
+                    shape="rectangular"
+                    text="continue_with"
+                    width="320"
+                  />
+                </div>
+              </div>
             )}
 
             <div className="mt-6 pt-6 border-t border-gray-100 text-center">

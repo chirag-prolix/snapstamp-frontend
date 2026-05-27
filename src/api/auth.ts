@@ -23,6 +23,10 @@ export const getMe = () =>
   client.get<ApiResponse<AppUser>>('/api/v1/auth/me')
     .then(r => r.data.data);
 
+export const googleLogin = (idToken: string) =>
+  client.post<ApiResponse<AuthResponse>>('/api/v1/auth/google', { idToken })
+    .then(r => r.data.data);
+
 export const requestPhoneLoginOtp = (phone: string) =>
   client.post('/api/v1/auth/login/phone', { phone }).then(r => r.data);
 
