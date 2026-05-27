@@ -48,6 +48,12 @@ client.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Public auth endpoints return 401 for bad credentials — don't try to refresh
+    const url = (originalRequest.url ?? '');
+    if (url.includes('/auth/login') || url.includes('/auth/register') || url.includes('/auth/google')) {
+      return Promise.reject(error);
+    }
+
     const refreshToken = getRefreshToken();
     if (!refreshToken) {
       clearTokens();
