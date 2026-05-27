@@ -12,7 +12,7 @@ export interface BaseUser {
   email: string;
   firstName: string;
   lastName: string;
-  phone: string;
+  phone: string | null;
   roles: string[];
   isEmailVerified: boolean;
   isPhoneVerified: boolean;

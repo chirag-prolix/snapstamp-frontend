@@ -266,6 +266,7 @@ export default function LoginPage() {
                       try {
                         const res = await googleLogin(credential);
                         authLogin(res);
+                        if (!res.user.phone) { navigate('/complete-profile'); return; }
                         const r = res.user.roles[0];
                         if (r === 'ROLE_MERCHANT') navigate('/merchant');
                         else if (r === 'ROLE_ADMIN') navigate('/admin');

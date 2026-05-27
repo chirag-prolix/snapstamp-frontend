@@ -12,6 +12,7 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (response: AuthResponse) => void;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -40,12 +41,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    const updated = await getMe();
+    setUser(updated);
+  };
+
   const role: Role = user
     ? (user.roles.find(r => ['ROLE_CUSTOMER', 'ROLE_MERCHANT', 'ROLE_ADMIN'].includes(r)) as Role ?? null)
     : null;
 
   return (
-    <AuthContext.Provider value={{ user, role, isAuthenticated: !!user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, role, isAuthenticated: !!user, isLoading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

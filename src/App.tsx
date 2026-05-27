@@ -11,6 +11,7 @@ import type { MerchantUser } from './types/api';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterCustomerPage from './pages/auth/RegisterCustomerPage';
 import RegisterMerchantPage from './pages/auth/RegisterMerchantPage';
+import CompleteProfilePage from './pages/auth/CompleteProfilePage';
 
 // Customer pages
 import CustomerDashboard from './pages/customer/CustomerDashboard';
@@ -74,6 +75,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<RootRedirect />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/complete-profile" element={<CompleteProfilePage />} />
       <Route path="/register/customer" element={<RegisterCustomerPage />} />
       <Route path="/register/merchant" element={<RegisterMerchantPage />} />
 
