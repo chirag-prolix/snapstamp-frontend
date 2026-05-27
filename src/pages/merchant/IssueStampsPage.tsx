@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm, type Resolver } from 'react-hook-form';
+import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
@@ -15,7 +15,7 @@ import type { StampCardDetail } from '../../types/api';
 
 const schema = z.object({
   lookupType:   z.enum(['phone', 'customerId']),
-  phone:        z.string().optional(),
+  phone:        z.string().regex(/^\+91[0-9]{10}$/, 'Enter a valid 10-digit mobile number').optional(),
   customerId:   z.string().uuid('Invalid UUID').optional(),
   count:        z.coerce.number().int().min(1, 'Min 1').max(10, 'Max 10'),
   notes:        z.string().max(500).optional(),
@@ -37,7 +37,7 @@ type FormData = {
 export default function IssueStampsPage() {
   const [result, setResult] = useState<StampCardDetail | null>(null);
 
-  const { register, handleSubmit, watch, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, watch, reset, control, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema) as unknown as Resolver<FormData>,
     defaultValues: { lookupType: 'phone', count: 1, isBonus: false },
   });
@@ -80,10 +80,40 @@ export default function IssueStampsPage() {
                 </div>
               </div>
 
-              {lookupType === 'phone'
-                ? <Input label="Phone number" placeholder="+919876543210" {...register('phone')} error={errors.phone?.message} />
-                : <Input label="Customer UUID" {...register('customerId')} error={errors.customerId?.message} />
-              }
+              {lookupType === 'phone' ? (
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-gray-700">Phone number</label>
+                  <Controller
+                    name="phone"
+                    control={control}
+                    render={({ field }) => (
+                      <div className={`flex items-center rounded-lg border transition focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}>
+                        <span className="pl-3 pr-2 text-sm text-gray-500 select-none border-r border-gray-300 py-2 font-medium whitespace-nowrap">+91</span>
+                        <input
+                          type="tel"
+                          inputMode="numeric"
+                          maxLength={10}
+                          placeholder="98765 43210"
+                          value={field.value ? field.value.replace(/^\+91/, '') : ''}
+                          onChange={e => {
+                            const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                            field.onChange(digits ? `+91${digits}` : '');
+                          }}
+                          className="flex-1 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none bg-transparent rounded-r-lg"
+                        />
+                        {field.value && field.value.replace(/^\+91/, '').length > 0 && (
+                          <span className={`pr-3 text-xs font-medium ${field.value.replace(/^\+91/, '').length === 10 ? 'text-green-500' : 'text-gray-400'}`}>
+                            {field.value.replace(/^\+91/, '').length}/10
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  />
+                  {errors.phone && <p className="text-xs text-red-600">{errors.phone.message}</p>}
+                </div>
+              ) : (
+                <Input label="Customer UUID" {...register('customerId')} error={errors.customerId?.message} />
+              )}
 
               <Input label="Number of stamps (1–10)" type="number" min={1} max={10} {...register('count')} error={errors.count?.message} />
               <Input label="Notes (optional)" {...register('notes')} />
