@@ -32,7 +32,7 @@ export function Button({
   return (
     <button
       disabled={disabled || isLoading}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors cursor-pointer
+      className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200 cursor-pointer
         ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
       {...props}
     >

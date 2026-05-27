@@ -79,8 +79,27 @@ export default function LoginPage() {
                 <EyeIcon open={showPassword} />
               </button>
             </div>
-            <Button type="submit" isLoading={isSubmitting} className="w-full" size="lg">
+            <Button
+              type="submit"
+              isLoading={isSubmitting}
+              size="lg"
+              className="w-full group transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
+            >
               Sign in
+              {!isSubmitting && (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-4 h-4 opacity-0 -translate-x-2 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0"
+                >
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              )}
             </Button>
           </form>
           <p className="text-center text-sm text-gray-500 mt-6">
