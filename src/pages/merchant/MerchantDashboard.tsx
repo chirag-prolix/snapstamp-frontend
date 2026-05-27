@@ -16,18 +16,29 @@ function TrialBanner({ merchant }: { merchant: MerchantUser }) {
   const inTrial = daysLeft > 0;
 
   if (!inTrial || merchant.subscriptionExpiresAt) return null;
-  if (daysLeft > 7) return null;
+
+  const isUrgent = daysLeft <= 7;
 
   return (
-    <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 flex items-center justify-between gap-4">
-      <p className="text-sm text-amber-800 font-medium">
-        Your free trial ends in <span className="font-bold">{daysLeft} day{daysLeft !== 1 ? 's' : ''}</span>. Subscribe to keep uninterrupted access.
-      </p>
+    <div className={`rounded-xl border px-5 py-3 flex items-center justify-between gap-4 ${
+      isUrgent ? 'border-amber-200 bg-amber-50' : 'border-indigo-200 bg-indigo-50'
+    }`}>
+      <div className="flex items-center gap-3">
+        <span className="text-lg">{isUrgent ? '⚠️' : '🎁'}</span>
+        <p className={`text-sm font-medium ${isUrgent ? 'text-amber-800' : 'text-indigo-800'}`}>
+          {isUrgent
+            ? <>Your free trial ends in <span className="font-bold">{daysLeft} day{daysLeft !== 1 ? 's' : ''}</span>. Subscribe to keep uninterrupted access.</>
+            : <>You are on a free trial — <span className="font-bold">{daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining</span>. Subscribe anytime to continue after it ends.</>
+          }
+        </p>
+      </div>
       <Link
         to="/merchant/subscription"
-        className="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 transition-colors"
+        className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-colors ${
+          isUrgent ? 'bg-amber-600 hover:bg-amber-700' : 'bg-indigo-600 hover:bg-indigo-700'
+        }`}
       >
-        Subscribe now
+        {isUrgent ? 'Subscribe now' : 'View plans'}
       </Link>
     </div>
   );
