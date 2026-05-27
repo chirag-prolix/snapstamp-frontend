@@ -162,7 +162,6 @@ export default function LoginPage() {
                         onChange={e => {
                           const raw = e.target.value.replace(/\D/g, '').slice(0, 10);
                           setPhone(raw ? `+91${raw}` : '');
-                          setPhoneError('');
                         }}
                         className="flex-1 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none bg-transparent rounded-r-lg"
                         autoFocus
