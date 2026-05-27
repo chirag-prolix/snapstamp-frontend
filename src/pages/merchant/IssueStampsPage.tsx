@@ -33,7 +33,7 @@ type FormData = {
 };
 
 function StampCardPreview({ detail }: { detail: StampCardDetail }) {
-  const { stampCard, stamps } = detail;
+  const { stampCard } = detail;
   const total = stampCard.totalSlotsRequired;
   return (
     <div className="rounded-2xl overflow-hidden shadow-lg border border-gray-200">
@@ -52,15 +52,14 @@ function StampCardPreview({ detail }: { detail: StampCardDetail }) {
       <div className="bg-white p-5">
         <div className="grid grid-cols-5 gap-3 mb-4">
           {Array.from({ length: total }, (_, i) => {
-            const stamp = stamps[i];
+            const filled = i < stampCard.currentStampCount;
             return (
               <div
                 key={i}
-                title={stamp ? `Stamp ${stamp.stampSequence} — ${new Date(stamp.collectedAt).toLocaleDateString()}` : 'Empty'}
                 className={`aspect-square rounded-full border-2 flex items-center justify-center text-base
-                  ${stamp ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-gray-200 bg-gray-50'}`}
+                  ${filled ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-gray-200 bg-gray-50'}`}
               >
-                {stamp ? '⭐' : <span className="text-gray-300 text-xs">{i + 1}</span>}
+                {filled ? '⭐' : <span className="text-gray-300 text-xs">{i + 1}</span>}
               </div>
             );
           })}
