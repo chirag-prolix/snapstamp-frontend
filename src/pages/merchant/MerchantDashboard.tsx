@@ -20,7 +20,7 @@ function TrialBanner({ merchant }: { merchant: MerchantUser }) {
   const isUrgent = daysLeft <= 7;
 
   return (
-    <div className={`rounded-xl border px-5 py-3 flex items-center justify-between gap-4 ${
+    <div className={`rounded-xl border px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${
       isUrgent ? 'border-amber-200 bg-amber-50' : 'border-indigo-200 bg-indigo-50'
     }`}>
       <div className="flex items-center gap-3">
