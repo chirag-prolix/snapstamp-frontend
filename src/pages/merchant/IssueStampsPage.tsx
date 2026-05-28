@@ -335,7 +335,7 @@ export default function IssueStampsPage() {
                 {errors.cardExpiresAt && (
                   <p className="text-xs text-red-600">{errors.cardExpiresAt.message}</p>
                 )}
-                <p className="text-xs text-gray-400">Only applies when creating a new stamp card for this customer.</p>
+                <p className="text-xs text-gray-400">Sets or updates the expiry date on this customer's stamp card.</p>
               </div>
 
               <Button type="submit" isLoading={isSubmitting} className="w-full">Issue stamps</Button>
