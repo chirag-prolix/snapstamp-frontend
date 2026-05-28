@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react';
 import { getStampCards } from '../../api/customer';
 import { AppShell } from '../../components/layout/AppShell';
 import { StampCardWidget } from '../../components/shared/StampCardWidget';
@@ -13,6 +13,17 @@ export default function StampCardsPage() {
   const [showCode, setShowCode] = useState(false);
   const { user } = useAuth();
   const phone = (user as CustomerUser)?.phone;
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const downloadQR = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'snapstamp-qr.png';
+    a.click();
+  };
 
   const { data: cards, isLoading } = useQuery({
     queryKey: ['stampCards'],
@@ -63,9 +74,15 @@ export default function StampCardsPage() {
           {phone ? (
             <>
               <div className="rounded-xl border border-gray-200 p-4 bg-gray-50">
-                <QRCodeSVG value={phone} size={180} />
+                <QRCodeCanvas ref={canvasRef} value={phone} size={180} />
               </div>
               <p className="text-xl font-mono font-semibold tracking-widest text-gray-800">{phone}</p>
+              <button
+                onClick={downloadQR}
+                className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:border-indigo-400 hover:text-indigo-600 transition-colors"
+              >
+                ⬇️ Download QR
+              </button>
             </>
           ) : (
             <p className="text-sm text-red-500">
