@@ -36,12 +36,15 @@ function QrScannerModal({ onClose, onScan }: {
   onClose: () => void;
   onScan: (phone: string) => void;
 }) {
+  const [mode, setMode] = useState<'camera' | 'file'>('camera');
   const [error, setError] = useState<string | null>(null);
   const didScan = useRef(false);
   const stopRef = useRef<(() => Promise<void>) | null>(null);
 
   useEffect(() => {
+    if (mode !== 'camera') return;
     let cancelled = false;
+    setError(null);
 
     import('html5-qrcode').then(({ Html5Qrcode }) => {
       if (cancelled) return;
@@ -54,8 +57,7 @@ function QrScannerModal({ onClose, onScan }: {
         (text) => {
           if (didScan.current) return;
           didScan.current = true;
-          const digits = text.replace(/\D/g, '');
-          const phone = text.startsWith('+') ? text : `+91${digits}`;
+          const phone = text.startsWith('+') ? text : `+91${text.replace(/\D/g, '')}`;
           scanner.stop().catch(() => {});
           onScan(phone);
         },
@@ -67,7 +69,29 @@ function QrScannerModal({ onClose, onScan }: {
       cancelled = true;
       stopRef.current?.().catch(() => {});
     };
-  }, []);
+  }, [mode]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError(null);
+    try {
+      const { Html5Qrcode } = await import('html5-qrcode');
+      const text = await Html5Qrcode.scanFile(file, false);
+      const phone = text.startsWith('+') ? text : `+91${text.replace(/\D/g, '')}`;
+      onScan(phone);
+    } catch {
+      setError('Could not read QR code from image. Try a clearer screenshot.');
+    }
+  };
+
+  const switchMode = (next: 'camera' | 'file') => {
+    stopRef.current?.().catch(() => {});
+    stopRef.current = null;
+    didScan.current = false;
+    setError(null);
+    setMode(next);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -77,12 +101,47 @@ function QrScannerModal({ onClose, onScan }: {
           <h2 className="font-semibold text-gray-900">Scan Customer QR</h2>
           <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none cursor-pointer">×</button>
         </div>
+
+        {/* tabs */}
+        <div className="flex border-b border-gray-100">
+          {(['camera', 'file'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => switchMode(m)}
+              className={`flex-1 py-2.5 text-sm font-medium transition-colors
+                ${mode === m ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              {m === 'camera' ? '📷 Camera' : '🖼️ Upload image'}
+            </button>
+          ))}
+        </div>
+
         <div className="p-4">
-          {error
-            ? <p className="text-sm text-red-500 text-center py-6">{error}</p>
-            : <div id="qr-reader" className="w-full rounded-lg overflow-hidden" />
-          }
-          <p className="text-xs text-gray-400 text-center mt-3">Point the camera at the customer's QR code</p>
+          {mode === 'camera' ? (
+            <>
+              {error
+                ? <p className="text-sm text-red-500 text-center py-6">{error}</p>
+                : <div id="qr-reader" className="w-full rounded-lg overflow-hidden" />
+              }
+              <p className="text-xs text-gray-400 text-center mt-3">Point the camera at the customer's QR code</p>
+            </>
+          ) : (
+            <>
+              <label className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-200 rounded-xl p-8 cursor-pointer hover:border-indigo-400 transition-colors">
+                <span className="text-3xl">📂</span>
+                <span className="text-sm text-gray-500 text-center">
+                  Screenshot the customer's QR code and upload it here
+                </span>
+                <span className="text-xs text-indigo-600 font-medium">Choose file</span>
+                <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+              </label>
+              {error && <p className="text-sm text-red-500 text-center mt-3">{error}</p>}
+              <p className="text-xs text-gray-400 text-center mt-3">
+                Works great for testing on the same computer
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>
