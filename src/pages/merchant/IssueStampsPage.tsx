@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useForm, Controller, type Resolver } from 'react-hook-form';
+import { useForm, useWatch, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
@@ -76,8 +76,21 @@ function QrScannerModal({ onClose, onScan }: {
     if (!file) return;
     setError(null);
     try {
-      const { Html5Qrcode } = await import('html5-qrcode');
-      const text = await Html5Qrcode.scanFile(file, false);
+      const { default: jsQR } = await import('jsqr');
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.src = url;
+      await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = rej; });
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const result = jsQR(data, width, height);
+      if (!result) throw new Error('No QR found');
+      const text = result.data;
       const phone = text.startsWith('+') ? text : `+91${text.replace(/\D/g, '')}`;
       onScan(phone);
     } catch {
@@ -195,12 +208,12 @@ export default function IssueStampsPage() {
   const [result, setResult] = useState<StampCardDetail | null>(null);
   const [showScanner, setShowScanner] = useState(false);
 
-  const { register, handleSubmit, watch, reset, control, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, reset, control, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema) as unknown as Resolver<FormData>,
     defaultValues: { lookupType: 'phone', count: 1, isBonus: false },
   });
 
-  const lookupType = watch('lookupType');
+  const lookupType = useWatch({ control, name: 'lookupType' });
 
   const { mutate: issue } = useMutation({
     mutationFn: (data: FormData) => issueStamps({
