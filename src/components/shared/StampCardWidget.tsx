@@ -26,7 +26,7 @@ export function StampCardWidget({ card, showLink = true }: StampCardWidgetProps)
         </div>
         <ProgressBar value={card.currentStampCount} max={card.totalSlotsRequired} />
         <p className="text-xs text-gray-400 mt-2">
-          Expires {new Date(card.expiresAt).toLocaleDateString()}
+          Expires {new Date(card.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
         </p>
       </CardBody>
     </Card>

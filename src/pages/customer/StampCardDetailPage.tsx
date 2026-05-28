@@ -7,6 +7,9 @@ import { Badge, statusColor } from '../../components/ui/Badge';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { PageSpinner } from '../../components/ui/Spinner';
 
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
 export default function StampCardDetailPage() {
   const { id } = useParams<{ id: string }>();
 
@@ -48,12 +51,12 @@ export default function StampCardDetailPage() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-gray-400">Expires</p>
-                <p className="font-medium">{new Date(stampCard.expiresAt).toLocaleDateString()}</p>
+                <p className="font-medium">{formatDate(stampCard.expiresAt)}</p>
               </div>
               {stampCard.completedAt && (
                 <div>
                   <p className="text-gray-400">Completed</p>
-                  <p className="font-medium">{new Date(stampCard.completedAt).toLocaleDateString()}</p>
+                  <p className="font-medium">{formatDate(stampCard.completedAt)}</p>
                 </div>
               )}
               {stampCard.bonusStamps > 0 && (
