@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
-import { Html5Qrcode } from 'html5-qrcode';
 import { issueStamps } from '../../api/merchant';
 import { AppShell } from '../../components/layout/AppShell';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
@@ -38,30 +37,35 @@ function QrScannerModal({ onClose, onScan }: {
   onScan: (phone: string) => void;
 }) {
   const [error, setError] = useState<string | null>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
   const didScan = useRef(false);
+  const stopRef = useRef<(() => Promise<void>) | null>(null);
 
   useEffect(() => {
-    const scanner = new Html5Qrcode('qr-reader');
-    scannerRef.current = scanner;
+    let cancelled = false;
 
-    scanner.start(
-      { facingMode: 'environment' },
-      { fps: 10, qrbox: { width: 240, height: 240 } },
-      (text) => {
-        if (didScan.current) return;
-        didScan.current = true;
-        // normalize: QR may encode "+91XXXXXXXXXX" or just digits
-        const digits = text.replace(/\D/g, '');
-        const phone = text.startsWith('+') ? text : `+91${digits}`;
-        scanner.stop().catch(() => {});
-        onScan(phone);
-      },
-      () => {},
-    ).catch(() => setError('Camera access denied. Please allow camera permissions and try again.'));
+    import('html5-qrcode').then(({ Html5Qrcode }) => {
+      if (cancelled) return;
+      const scanner = new Html5Qrcode('qr-reader');
+      stopRef.current = () => scanner.stop();
+
+      scanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 240, height: 240 } },
+        (text) => {
+          if (didScan.current) return;
+          didScan.current = true;
+          const digits = text.replace(/\D/g, '');
+          const phone = text.startsWith('+') ? text : `+91${digits}`;
+          scanner.stop().catch(() => {});
+          onScan(phone);
+        },
+        () => {},
+      ).catch(() => setError('Camera access denied. Please allow camera permissions and try again.'));
+    });
 
     return () => {
-      scanner.stop().catch(() => {});
+      cancelled = true;
+      stopRef.current?.().catch(() => {});
     };
   }, []);
 
