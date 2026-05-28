@@ -15,15 +15,24 @@ const today = new Date().toISOString().split('T')[0];
 
 const schema = z.object({
   lookupType:     z.enum(['phone', 'customerId']),
-  phone:          z.string().regex(/^\+91[0-9]{10}$/, 'Enter a valid 10-digit mobile number').optional(),
-  customerId:     z.string().uuid('Invalid UUID').optional(),
+  phone:          z.string().optional(),
+  customerId:     z.string().optional(),
   count:          z.coerce.number().int().min(1, 'Min 1').max(10, 'Max 10'),
   notes:          z.string().max(500).optional(),
   isBonus:        z.boolean().optional(),
   cardExpiresAt:  z.string().optional(),
-}).refine(d => d.lookupType === 'phone' ? !!d.phone : !!d.customerId, {
-  message: 'Customer identifier required',
-  path: ['phone'],
+}).superRefine((d, ctx) => {
+  if (d.lookupType === 'phone') {
+    if (!d.phone || !/^\+91[0-9]{10}$/.test(d.phone)) {
+      ctx.addIssue({ code: "custom", message: 'Enter a valid 10-digit mobile number', path: ['phone'] });
+    }
+  } else {
+    if (!d.customerId) {
+      ctx.addIssue({ code: "custom", message: 'Customer identifier required', path: ['customerId'] });
+    } else if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(d.customerId)) {
+      ctx.addIssue({ code: "custom", message: 'Invalid UUID', path: ['customerId'] });
+    }
+  }
 }).refine(d => !d.cardExpiresAt || d.cardExpiresAt >= today, {
   message: 'Expiry date must be in the future',
   path: ['cardExpiresAt'],
