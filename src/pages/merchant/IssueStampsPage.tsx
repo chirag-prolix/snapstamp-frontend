@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useForm, useWatch, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,7 +10,8 @@ import { AppShell } from '../../components/layout/AppShell';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import type { StampCardDetail } from '../../types/api';
+import { useAuth } from '../../contexts/AuthContext';
+import type { MerchantUser, StampCardDetail } from '../../types/api';
 
 const today = new Date().toISOString().split('T')[0];
 
@@ -220,6 +222,8 @@ function StampCardPreview({ detail }: { detail: StampCardDetail }) {
 }
 
 export default function IssueStampsPage() {
+  const { user } = useAuth();
+  const merchant = user as MerchantUser;
   const [result, setResult] = useState<StampCardDetail | null>(null);
   const [showScanner, setShowScanner] = useState(false);
 
@@ -247,6 +251,30 @@ export default function IssueStampsPage() {
     },
     onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Failed to issue stamps'),
   });
+
+  if (!merchant?.hasActiveAccess) {
+    return (
+      <AppShell title="Issue Stamps">
+        <div className="max-w-4xl">
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <span className="text-3xl">🔒</span>
+            <div className="flex-1">
+              <p className="font-semibold text-red-800">Trial period ended</p>
+              <p className="text-sm text-red-600 mt-1">
+                Your free trial has expired. Subscribe to continue issuing stamps to customers.
+              </p>
+            </div>
+            <Link
+              to="/merchant/subscription"
+              className="shrink-0 inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+            >
+              View plans
+            </Link>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell title="Issue Stamps">
