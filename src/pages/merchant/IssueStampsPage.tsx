@@ -11,16 +11,22 @@ import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import type { StampCardDetail } from '../../types/api';
 
+const today = new Date().toISOString().split('T')[0];
+
 const schema = z.object({
-  lookupType:   z.enum(['phone', 'customerId']),
-  phone:        z.string().regex(/^\+91[0-9]{10}$/, 'Enter a valid 10-digit mobile number').optional(),
-  customerId:   z.string().uuid('Invalid UUID').optional(),
-  count:        z.coerce.number().int().min(1, 'Min 1').max(10, 'Max 10'),
-  notes:        z.string().max(500).optional(),
-  isBonus:      z.boolean().optional(),
+  lookupType:     z.enum(['phone', 'customerId']),
+  phone:          z.string().regex(/^\+91[0-9]{10}$/, 'Enter a valid 10-digit mobile number').optional(),
+  customerId:     z.string().uuid('Invalid UUID').optional(),
+  count:          z.coerce.number().int().min(1, 'Min 1').max(10, 'Max 10'),
+  notes:          z.string().max(500).optional(),
+  isBonus:        z.boolean().optional(),
+  cardExpiresAt:  z.string().optional(),
 }).refine(d => d.lookupType === 'phone' ? !!d.phone : !!d.customerId, {
   message: 'Customer identifier required',
   path: ['phone'],
+}).refine(d => !d.cardExpiresAt || d.cardExpiresAt >= today, {
+  message: 'Expiry date must be in the future',
+  path: ['cardExpiresAt'],
 });
 
 type FormData = {
@@ -30,6 +36,7 @@ type FormData = {
   count: number;
   notes?: string;
   isBonus?: boolean;
+  cardExpiresAt?: string;
 };
 
 function QrScannerModal({ onClose, onScan }: {
@@ -44,7 +51,6 @@ function QrScannerModal({ onClose, onScan }: {
   useEffect(() => {
     if (mode !== 'camera') return;
     let cancelled = false;
-    setError(null);
 
     import('html5-qrcode').then(({ Html5Qrcode }) => {
       if (cancelled) return;
@@ -220,6 +226,7 @@ export default function IssueStampsPage() {
       count: data.count,
       notes: data.notes,
       isBonus: data.isBonus,
+      cardExpiresAt: data.cardExpiresAt || undefined,
       ...(data.lookupType === 'phone'
         ? { customerPhone: data.phone }
         : { customerId: data.customerId }),
@@ -305,6 +312,23 @@ export default function IssueStampsPage() {
                 <input type="checkbox" {...register('isBonus')} />
                 Mark as bonus stamps
               </label>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Card expiry date <span className="text-gray-400 font-normal">(optional — default 1 year)</span>
+                </label>
+                <input
+                  type="date"
+                  min={today}
+                  {...register('cardExpiresAt')}
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                {errors.cardExpiresAt && (
+                  <p className="text-xs text-red-600">{errors.cardExpiresAt.message}</p>
+                )}
+                <p className="text-xs text-gray-400">Only applies when creating a new stamp card for this customer.</p>
+              </div>
+
               <Button type="submit" isLoading={isSubmitting} className="w-full">Issue stamps</Button>
             </form>
           </CardBody>

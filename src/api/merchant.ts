@@ -38,6 +38,7 @@ export interface IssueStampsData {
   transactionId?: string;
   notes?: string;
   isBonus?: boolean;
+  cardExpiresAt?: string;
 }
 
 export const issueStamps = (data: IssueStampsData) =>
