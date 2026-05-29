@@ -3,12 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 import { getMerchantProfile, updateMerchantProfile } from '../../api/merchant';
+import { useBusinessDescription } from '../../hooks/useAi';
 import { AppShell } from '../../components/layout/AppShell';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { PageSpinner } from '../../components/ui/Spinner';
+import { AiSuggestButton } from '../../components/shared/AiSuggestButton';
 
 type FormData = {
   businessDescription: string;
@@ -66,6 +68,22 @@ export default function MerchantProfilePage() {
     onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Update failed'),
   });
 
+  const { mutate: generateDesc, isPending: isGeneratingDesc } = useBusinessDescription();
+
+  const handleGenerateDescription = () => {
+    if (!profile?.businessName) return;
+    generateDesc(
+      { businessName: profile.businessName, businessType: profile.businessName, city: profile.city },
+      {
+        onSuccess: (desc) => {
+          setValue('businessDescription', desc);
+          toast.success('AI generated a business description!');
+        },
+        onError: () => toast.error('AI description failed. Please try again.'),
+      },
+    );
+  };
+
   if (isLoading) return <AppShell title="Profile"><PageSpinner /></AppShell>;
 
   return (
@@ -96,11 +114,19 @@ export default function MerchantProfilePage() {
               ...(longitude !== '' && { longitude: parseFloat(longitude) } as any),
             }))} className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">Business description</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium text-gray-700">Business description</label>
+                  <AiSuggestButton
+                    onClick={handleGenerateDescription}
+                    isLoading={isGeneratingDesc}
+                    label="Generate with AI"
+                    disabled={!profile?.businessName}
+                  />
+                </div>
                 <textarea
                   {...register('businessDescription')}
                   rows={3}
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">

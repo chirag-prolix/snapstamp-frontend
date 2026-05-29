@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getMerchantStats } from '../../api/merchant';
+import { useAnalyticsInsights } from '../../hooks/useAi';
 import { AppShell } from '../../components/layout/AppShell';
 import { StatCard } from '../../components/shared/StatCard';
-import { Card, CardHeader } from '../../components/ui/Card';
+import { Card, CardHeader, CardBody } from '../../components/ui/Card';
 import { PageSpinner } from '../../components/ui/Spinner';
 import { useAuth } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
@@ -52,6 +53,12 @@ export default function MerchantDashboard() {
   const { user } = useAuth();
   const merchant = user as MerchantUser;
 
+  const { mutate: fetchInsights, data: insights, isPending: insightsLoading } = useAnalyticsInsights();
+
+  useEffect(() => {
+    if (data) fetchInsights(data);
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (isLoading) return <AppShell title="Dashboard"><PageSpinner /></AppShell>;
 
   return (
@@ -75,6 +82,32 @@ export default function MerchantDashboard() {
             <StatCard label="Active customers" value={data?.last30Days.activeCustomers ?? 0} icon="🙋" />
           </div>
         </section>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <svg className="h-4 w-4 text-indigo-500" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z" />
+              </svg>
+              <p className="font-medium text-gray-700">AI insights</p>
+            </div>
+          </CardHeader>
+          <CardBody>
+            {insightsLoading && (
+              <p className="text-sm text-gray-400 animate-pulse">Analysing your data...</p>
+            )}
+            {insights && !insightsLoading && (
+              <ul className="space-y-2">
+                {insights.split('\n').filter(Boolean).map((line, i) => (
+                  <li key={i} className="text-sm text-gray-700 leading-relaxed">{line}</li>
+                ))}
+              </ul>
+            )}
+            {!insights && !insightsLoading && (
+              <p className="text-sm text-gray-400">No insights available yet.</p>
+            )}
+          </CardBody>
+        </Card>
 
         {(data?.topRewards?.length ?? 0) > 0 && (
           <Card>

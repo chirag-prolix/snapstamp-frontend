@@ -5,6 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'react-hot-toast';
 import { getMerchantRewards, createReward } from '../../api/merchant';
+import { useAuth } from '../../contexts/AuthContext';
+import { useRewardSuggestion } from '../../hooks/useAi';
 import { AppShell } from '../../components/layout/AppShell';
 import { Card, CardBody } from '../../components/ui/Card';
 import { Badge, statusColor } from '../../components/ui/Badge';
@@ -12,6 +14,8 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { PageSpinner } from '../../components/ui/Spinner';
+import { AiSuggestButton } from '../../components/shared/AiSuggestButton';
+import type { MerchantUser } from '../../types/api';
 
 const schema = z.object({
   title:           z.string().min(5, 'At least 5 characters').max(255),
@@ -37,16 +41,43 @@ type FormData = {
 export default function MerchantRewardsPage() {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const merchant = user as MerchantUser | null;
 
   const { data: rewards, isLoading } = useQuery({
     queryKey: ['merchantRewards'],
     queryFn: getMerchantRewards,
   });
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema) as unknown as Resolver<FormData>,
     defaultValues: { stampRequirement: 10 },
   });
+
+  const { mutate: suggest, isPending: isSuggesting } = useRewardSuggestion();
+
+  const handleAiSuggest = () => {
+    if (!merchant) return;
+    suggest(
+      {
+        businessName: merchant.businessName,
+        businessType: merchant.businessName,
+        businessDescription: merchant.businessDescription ?? '',
+      },
+      {
+        onSuccess: (data) => {
+          setValue('title', data.title);
+          setValue('description', data.description);
+          setValue('rewardType', data.rewardType);
+          setValue('value', String(data.value));
+          setValue('stampRequirement', data.stampRequirement);
+          setValue('terms', data.terms ?? '');
+          toast.success('AI filled the reward form!');
+        },
+        onError: () => toast.error('AI suggestion failed. Please try again.'),
+      },
+    );
+  };
 
   const { mutate: create } = useMutation({
     mutationFn: (data: FormData) => createReward({
@@ -95,6 +126,10 @@ export default function MerchantRewardsPage() {
 
       <Modal isOpen={open} onClose={() => { setOpen(false); reset(); }} title="Create new reward" size="lg">
         <form onSubmit={handleSubmit(d => create(d))} className="space-y-4">
+          <div className="flex items-center justify-between pb-1 border-b border-gray-100">
+            <p className="text-xs text-gray-400">Fill the form manually or let AI suggest a reward.</p>
+            <AiSuggestButton onClick={handleAiSuggest} isLoading={isSuggesting} />
+          </div>
           <Input label="Title" {...register('title')} error={errors.title?.message} />
           <div>
             <label className="text-sm font-medium text-gray-700">Description</label>
