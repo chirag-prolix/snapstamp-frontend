@@ -18,11 +18,15 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  console.log('AuthProvider rendered');
   const [user, setUser] = useState<AppUser | null>(null);
+  console.log('Children:', children);
   const [isLoading, setIsLoading] = useState(true);
-
+  console.log('isLoading:', isLoading);
+  
   useEffect(() => {
     const token = getAccessToken();
+    console.log('token:', token);
     if (!token) { setIsLoading(false); return; }
 
     getMe()

@@ -7,7 +7,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../../components/ui/Button';
 
 export default function LoginPage() {
+  console.log('I\'m here');
   const { login: authLogin } = useAuth();
+  console.log('auth', authLogin);
   const navigate = useNavigate();
 
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
