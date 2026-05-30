@@ -99,7 +99,7 @@ export default function MerchantDashboard() {
             {insights && !insightsLoading && (
               <ul className="space-y-2">
                 {insights.split('\n').filter(Boolean).map((line, i) => (
-                  <li key={i} className="text-sm text-gray-700 leading-relaxed">{line}</li>
+                  <li key={i} className="text-base text-gray-700 leading-relaxed">{line}</li>
                 ))}
               </ul>
             )}
