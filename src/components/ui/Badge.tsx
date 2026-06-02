@@ -8,20 +8,22 @@ interface BadgeProps {
   className?: string;
 }
 
-const colorClasses: Record<BadgeColor, string> = {
-  green:  'bg-green-100 text-green-800',
-  yellow: 'bg-yellow-100 text-yellow-800',
-  red:    'bg-red-100 text-red-800',
-  gray:   'bg-gray-100 text-gray-700',
-  blue:   'bg-blue-100 text-blue-800',
-  purple: 'bg-purple-100 text-purple-800',
-  indigo: 'bg-indigo-100 text-indigo-800',
+const colorStyles: Record<BadgeColor, React.CSSProperties> = {
+  green:  { background: 'rgba(16,185,129,0.15)', color: '#34D399' },
+  yellow: { background: 'rgba(245,158,11,0.15)', color: '#F59E0B' },
+  red:    { background: 'rgba(239,68,68,0.15)',  color: '#F87171' },
+  gray:   { background: 'rgba(156,163,175,0.15)',color: '#9CA3AF' },
+  blue:   { background: 'rgba(59,130,246,0.15)', color: '#60A5FA' },
+  purple: { background: 'rgba(139,92,246,0.15)', color: '#A78BFA' },
+  indigo: { background: 'rgba(99,102,241,0.15)', color: '#818CF8' },
 };
 
 export function Badge({ color = 'gray', children, className = '' }: BadgeProps) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
-      ${colorClasses[color]} ${className}`}>
+    <span
+      style={colorStyles[color]}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${className}`}
+    >
       {children}
     </span>
   );

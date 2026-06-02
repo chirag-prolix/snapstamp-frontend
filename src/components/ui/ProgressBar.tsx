@@ -2,22 +2,25 @@ interface ProgressBarProps {
   value: number;
   max?: number;
   className?: string;
-  color?: 'indigo' | 'green' | 'yellow';
+  color?: 'accent' | 'green' | 'yellow';
 }
 
-const colorClasses = {
-  indigo: 'bg-indigo-600',
-  green:  'bg-green-500',
-  yellow: 'bg-yellow-500',
+const colorStyles: Record<string, React.CSSProperties> = {
+  accent: { background: 'var(--accent)' },
+  green:  { background: 'var(--success)' },
+  yellow: { background: '#F59E0B' },
 };
 
-export function ProgressBar({ value, max = 100, className = '', color = 'indigo' }: ProgressBarProps) {
+export function ProgressBar({ value, max = 100, className = '', color = 'accent' }: ProgressBarProps) {
   const pct = Math.min(100, Math.round((value / max) * 100));
   return (
-    <div className={`w-full bg-gray-200 rounded-full h-2 ${className}`}>
+    <div
+      className={`w-full rounded-full h-1.5 ${className}`}
+      style={{ background: 'var(--bg-elevated)' }}
+    >
       <div
-        className={`h-2 rounded-full transition-all ${colorClasses[color]}`}
-        style={{ width: `${pct}%` }}
+        className="h-1.5 rounded-full transition-all duration-500"
+        style={{ width: `${pct}%`, ...colorStyles[color] }}
       />
     </div>
   );

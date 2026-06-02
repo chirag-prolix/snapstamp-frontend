@@ -1,3 +1,4 @@
+import { Sparkles } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 interface AiSuggestButtonProps {
@@ -26,14 +27,7 @@ export function AiSuggestButton({
       className={`gap-1.5 ${className}`}
     >
       {!isLoading && (
-        <svg
-          className="h-3.5 w-3.5 text-indigo-500"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z" />
-        </svg>
+        <Sparkles size={13} style={{ color: 'var(--accent)' }} strokeWidth={1.75} />
       )}
       {label}
     </Button>

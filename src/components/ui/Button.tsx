@@ -7,17 +7,17 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
 }
 
-const variantClasses = {
-  primary:   'bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-300',
-  secondary: 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 disabled:opacity-50',
-  danger:    'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300',
-  ghost:     'text-gray-600 hover:bg-gray-100 disabled:opacity-50',
+const variantStyles: Record<string, string> = {
+  primary:   'text-black font-semibold hover:opacity-90 disabled:opacity-40',
+  secondary: 'border font-medium hover:opacity-80 disabled:opacity-40',
+  danger:    'text-white font-semibold hover:opacity-90 disabled:opacity-40',
+  ghost:     'font-medium hover:opacity-80 disabled:opacity-40',
 };
 
 const sizeClasses = {
-  sm: 'px-3 py-1.5 text-sm',
+  sm: 'px-3 py-1.5 text-xs',
   md: 'px-4 py-2 text-sm',
-  lg: 'px-6 py-3 text-base',
+  lg: 'px-5 py-2.5 text-sm',
 };
 
 export function Button({
@@ -27,13 +27,22 @@ export function Button({
   disabled,
   children,
   className = '',
+  style,
   ...props
 }: ButtonProps) {
+  const variantInlineStyle: Record<string, React.CSSProperties> = {
+    primary:   { background: 'var(--accent)', color: '#0D0F14' },
+    secondary: { background: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-primary)' },
+    danger:    { background: 'var(--danger)', color: '#fff' },
+    ghost:     { background: 'transparent', color: 'var(--text-secondary)' },
+  };
+
   return (
     <button
       disabled={disabled || isLoading}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200 cursor-pointer
-        ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      style={{ ...variantInlineStyle[variant], ...style }}
+      className={`inline-flex items-center justify-center gap-2 rounded-lg transition-all duration-200 cursor-pointer min-h-11
+        ${variantStyles[variant]} ${sizeClasses[size]} ${className}`}
       {...props}
     >
       {isLoading && (

@@ -1,10 +1,23 @@
 import { useNavigate } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { logout as apiLogout } from '../../api/auth';
-import { Button } from '../ui/Button';
 import { Badge, statusColor } from '../ui/Badge';
 
-export function TopBar({ title, onMenuClick }: { title?: string; onMenuClick?: () => void }) {
+function Initials({ name }: { name: string }) {
+  const parts = name.trim().split(/\s+/);
+  const letters = (parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '');
+  return (
+    <div
+      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+      style={{ background: 'var(--accent)', color: '#0D0F14' }}
+    >
+      {letters.toUpperCase()}
+    </div>
+  );
+}
+
+export function TopBar({ title }: { title?: string }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -15,35 +28,42 @@ export function TopBar({ title, onMenuClick }: { title?: string; onMenuClick?: (
   };
 
   const displayName = user
-    ? ('displayName' in user ? user.displayName : user.firstName + ' ' + user.lastName)
+    ? ('displayName' in user ? user.displayName : (user as any).firstName + ' ' + (user as any).lastName)
     : '';
 
-  const tier = user && 'tier' in user ? user.tier : null;
+  const tier = user && 'tier' in user ? (user as any).tier : null;
 
   return (
-    <header className="h-14 flex items-center justify-between px-4 sm:px-6 bg-white border-b border-gray-200">
+    <header
+      className="h-14 flex items-center justify-between px-4 sm:px-6 shrink-0"
+      style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}
+    >
+      <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h1>
+
       <div className="flex items-center gap-3">
+        {displayName && (
+          <div className="hidden sm:flex items-center gap-2.5">
+            <Initials name={displayName} />
+            <div className="text-right">
+              <p className="text-sm font-medium leading-tight" style={{ color: 'var(--text-primary)' }}>{displayName}</p>
+              {tier && <Badge color={statusColor(tier)} className="text-[10px]">{tier}</Badge>}
+            </div>
+          </div>
+        )}
+        {/* Mobile: just avatar */}
+        {displayName && (
+          <div className="sm:hidden">
+            <Initials name={displayName} />
+          </div>
+        )}
         <button
-          className="lg:hidden p-1.5 rounded-md text-gray-500 hover:bg-gray-100"
-          onClick={onMenuClick}
-          aria-label="Open menu"
+          onClick={handleLogout}
+          className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors hover:bg-white/5 cursor-pointer"
+          style={{ color: 'var(--text-muted)' }}
+          aria-label="Sign out"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+          <LogOut size={16} />
         </button>
-        <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
-      </div>
-      <div className="flex items-center gap-4">
-        <div className="text-right">
-          <p className="text-sm font-medium text-gray-900 leading-tight">{displayName}</p>
-          {tier && (
-            <Badge color={statusColor(tier)} className="text-xs">{tier}</Badge>
-          )}
-        </div>
-        <Button variant="ghost" size="sm" onClick={handleLogout}>
-          Sign out
-        </Button>
       </div>
     </header>
   );

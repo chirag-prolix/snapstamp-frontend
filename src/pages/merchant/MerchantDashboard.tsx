@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { PenSquare, Gift, Users, Star, CheckCircle, Activity } from 'lucide-react';
 import { getMerchantStats } from '../../api/merchant';
 import { useAnalyticsInsights } from '../../hooks/useAi';
 import { AppShell } from '../../components/layout/AppShell';
@@ -21,12 +22,16 @@ function TrialBanner({ merchant }: { merchant: MerchantUser }) {
   const isUrgent = daysLeft <= 7;
 
   return (
-    <div className={`rounded-xl border px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${
-      isUrgent ? 'border-amber-200 bg-amber-50' : 'border-indigo-200 bg-indigo-50'
-    }`}>
+    <div
+      className="rounded-xl border px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+      style={isUrgent
+        ? { borderColor: 'var(--danger)', background: 'var(--danger-dim)' }
+        : { borderColor: 'var(--accent)', background: 'var(--accent-dim)' }
+      }
+    >
       <div className="flex items-center gap-3">
-        <span className="text-lg">{isUrgent ? '⚠️' : '🎁'}</span>
-        <p className={`text-sm font-medium ${isUrgent ? 'text-amber-800' : 'text-indigo-800'}`}>
+        <span className="text-base">{isUrgent ? '⚠️' : '🎁'}</span>
+        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
           {isUrgent
             ? <>Your free trial ends in <span className="font-bold">{daysLeft} day{daysLeft !== 1 ? 's' : ''}</span>. Subscribe to keep uninterrupted access.</>
             : <>You are on a free trial — <span className="font-bold">{daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining</span>. Subscribe anytime to continue after it ends.</>
@@ -35,9 +40,11 @@ function TrialBanner({ merchant }: { merchant: MerchantUser }) {
       </div>
       <Link
         to="/merchant/subscription"
-        className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-colors ${
-          isUrgent ? 'bg-amber-600 hover:bg-amber-700' : 'bg-indigo-600 hover:bg-indigo-700'
-        }`}
+        className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-opacity hover:opacity-80"
+        style={isUrgent
+          ? { background: 'var(--danger)', color: '#fff' }
+          : { background: 'var(--accent)', color: '#0D0F14' }
+        }
       >
         {isUrgent ? 'Subscribe now' : 'View plans'}
       </Link>
@@ -66,58 +73,58 @@ export default function MerchantDashboard() {
       <div className="space-y-6">
         <TrialBanner merchant={merchant} />
         <section>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">All time</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-secondary)' }}>All time</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard label="Stamps issued" value={data?.totals.stampsIssued ?? 0} icon="📮" />
-            <StatCard label="Rewards redeemed" value={data?.totals.rewardsRedeemed ?? 0} icon="🎁" />
-            <StatCard label="Total customers" value={data?.totals.customers ?? 0} icon="👥" />
+            <StatCard label="Stamps issued"    value={data?.totals.stampsIssued ?? 0}   icon={PenSquare} />
+            <StatCard label="Rewards redeemed" value={data?.totals.rewardsRedeemed ?? 0} icon={Gift} />
+            <StatCard label="Total customers"  value={data?.totals.customers ?? 0}       icon={Users} />
           </div>
         </section>
 
         <section>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Last 30 days</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-secondary)' }}>Last 30 days</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard label="Stamps issued" value={data?.last30Days.stampsIssued ?? 0} icon="⭐" />
-            <StatCard label="Redemptions" value={data?.last30Days.redemptions ?? 0} icon="✅" />
-            <StatCard label="Active customers" value={data?.last30Days.activeCustomers ?? 0} icon="🙋" />
+            <StatCard label="Stamps issued"    value={data?.last30Days.stampsIssued ?? 0}     icon={Star} />
+            <StatCard label="Redemptions"      value={data?.last30Days.redemptions ?? 0}      icon={CheckCircle} />
+            <StatCard label="Active customers" value={data?.last30Days.activeCustomers ?? 0}  icon={Activity} />
           </div>
         </section>
 
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <svg className="h-4 w-4 text-indigo-500" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <svg className="h-4 w-4" style={{ color: 'var(--accent)' }} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z" />
               </svg>
-              <p className="font-medium text-gray-700">AI insights</p>
+              <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>AI insights</p>
             </div>
           </CardHeader>
           <CardBody>
             {insightsLoading && (
-              <p className="text-sm text-gray-400 animate-pulse">Analysing your data...</p>
+              <p className="text-sm animate-pulse" style={{ color: 'var(--text-muted)' }}>Analysing your data...</p>
             )}
             {insights && !insightsLoading && (
               <ul className="space-y-2">
                 {insights.split('\n').filter(Boolean).map((line, i) => (
-                  <li key={i} className="text-md text-gray-700 leading-relaxed">{line}</li>
+                  <li key={i} className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{line}</li>
                 ))}
               </ul>
             )}
             {!insights && !insightsLoading && (
-              <p className="text-sm text-gray-400">No insights available yet.</p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No insights available yet.</p>
             )}
           </CardBody>
         </Card>
 
         {(data?.topRewards?.length ?? 0) > 0 && (
           <Card>
-            <CardHeader><p className="font-medium text-gray-700">Top rewards</p></CardHeader>
-            <div className="divide-y divide-gray-100">
+            <CardHeader><p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Top rewards</p></CardHeader>
+            <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
               {data!.topRewards.map((r, i) => (
                 <div key={r.id} className="px-6 py-3 flex items-center gap-4">
-                  <span className="text-gray-400 text-sm w-5">{i + 1}.</span>
-                  <span className="flex-1 text-sm font-medium text-gray-900">{r.title}</span>
-                  <span className="text-sm text-gray-500">{r.redemptions} redemptions</span>
+                  <span className="text-sm w-5 font-medium" style={{ color: 'var(--text-muted)' }}>{i + 1}.</span>
+                  <span className="flex-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{r.title}</span>
+                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{r.redemptions} redemptions</span>
                 </div>
               ))}
             </div>
