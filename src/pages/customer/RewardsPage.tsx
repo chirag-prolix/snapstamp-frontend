@@ -67,6 +67,8 @@ export default function RewardsPage() {
     );
   };
 
+  const recommendedIds = new Set(recommendations?.map(r => r.rewardId) ?? []);
+
   const handleRedeem = (rewardId: string) => {
     setRedeemingId(rewardId);
     redeem(rewardId);
@@ -124,25 +126,25 @@ export default function RewardsPage() {
           </section>
         )}
 
-        {isLoading ? <PageSpinner /> : (
-          (rewards?.length ?? 0) === 0
-            ? <p className="text-gray-400 text-sm">No rewards found.</p>
-            : (
-              <>
-                <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">All rewards</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {rewards!.map(r => (
-                    <RewardCard
-                      key={r.id}
-                      reward={r}
-                      onRedeem={() => handleRedeem(r.id)}
-                      isRedeeming={redeemingId === r.id}
-                    />
-                  ))}
-                </div>
-              </>
-            )
-        )}
+        {isLoading ? <PageSpinner /> : (() => {
+          const remainingRewards = (rewards ?? []).filter(r => !recommendedIds.has(r.id));
+          if (remainingRewards.length === 0) return <p className="text-gray-400 text-sm">No rewards found.</p>;
+          return (
+            <>
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">All rewards</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {remainingRewards.map(r => (
+                  <RewardCard
+                    key={r.id}
+                    reward={r}
+                    onRedeem={() => handleRedeem(r.id)}
+                    isRedeeming={redeemingId === r.id}
+                  />
+                ))}
+              </div>
+            </>
+          );
+        })()}
       </div>
     </AppShell>
   );
