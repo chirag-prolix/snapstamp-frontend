@@ -12,7 +12,7 @@ const schema = z.object({
   firstName:    z.string().min(1, 'Required').max(100),
   lastName:     z.string().min(1, 'Required').max(100),
   email:        z.string().email('Invalid email'),
-  phone:        z.string().regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone (E.164 format, e.g. +919876543210)'),
+  phone:        z.string().regex(/^\+[1-9]\d{1,14}$/, 'Phone must start with country code (e.g. +919876543210)'),
   password:     z.string().min(8, 'Minimum 8 characters'),
   referralCode: z.string().max(20).optional().or(z.literal('')),
 });
