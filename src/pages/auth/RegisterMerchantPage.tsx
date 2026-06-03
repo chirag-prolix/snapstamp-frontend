@@ -1,3 +1,4 @@
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -33,6 +34,17 @@ export default function RegisterMerchantPage() {
     resolver: zodResolver(schema),
   });
 
+  const registerPhone = (name: 'phone' | 'phoneForBusiness') => {
+    const { onChange, ...rest } = register(name);
+    return {
+      ...rest,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+        e.target.value = e.target.value.replace(/[^\d+]/g, '');
+        return onChange(e);
+      },
+    };
+  };
+
   const onSubmit = async (data: FormData) => {
     try {
       await registerMerchant(data);
@@ -60,7 +72,7 @@ export default function RegisterMerchantPage() {
               </div>
               <div className="grid grid-cols-2 gap-4 mt-4">
                 <Input label="Email" type="email" {...register('email')} error={errors.email?.message} />
-                <Input label="Phone" placeholder="+919876543210" maxLength={16} {...register('phone')} error={errors.phone?.message} />
+                <Input label="Phone" placeholder="+919876543210" maxLength={16} {...registerPhone('phone')} error={errors.phone?.message} />
               </div>
               <div className="mt-4">
                 <Input label="Password" type="password" showToggle {...register('password')} error={errors.password?.message} />
@@ -76,7 +88,7 @@ export default function RegisterMerchantPage() {
                   <Input label="State" {...register('state')} error={errors.state?.message} />
                 </div>
                 <Input label="Address" {...register('address')} error={errors.address?.message} />
-                <Input label="Business phone" placeholder="+919876543210" maxLength={16} {...register('phoneForBusiness')} error={errors.phoneForBusiness?.message} />
+                <Input label="Business phone" placeholder="+919876543210" maxLength={16} {...registerPhone('phoneForBusiness')} error={errors.phoneForBusiness?.message} />
                 <Input label="Tax ID / GST" {...register('taxId')} error={errors.taxId?.message} />
               </div>
             </section>

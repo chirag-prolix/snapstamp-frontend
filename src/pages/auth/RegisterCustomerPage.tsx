@@ -1,3 +1,4 @@
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,6 +26,17 @@ export default function RegisterCustomerPage() {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
+
+  const registerPhone = (name: 'phone') => {
+    const { onChange, ...rest } = register(name);
+    return {
+      ...rest,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+        e.target.value = e.target.value.replace(/[^\d+]/g, '');
+        return onChange(e);
+      },
+    };
+  };
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -55,7 +67,7 @@ export default function RegisterCustomerPage() {
               <Input label="Last name" {...register('lastName')} error={errors.lastName?.message} />
             </div>
             <Input label="Email" type="email" {...register('email')} error={errors.email?.message} />
-            <Input label="Phone" placeholder="+919876543210" maxLength={16} {...register('phone')} error={errors.phone?.message} />
+            <Input label="Phone" placeholder="+919876543210" maxLength={16} {...registerPhone('phone')} error={errors.phone?.message} />
             <Input label="Password" type="password" showToggle {...register('password')} error={errors.password?.message} />
             <Input label="Referral code (optional)" {...register('referralCode')} error={errors.referralCode?.message} />
             <Button type="submit" isLoading={isSubmitting} className="w-full" size="lg">
