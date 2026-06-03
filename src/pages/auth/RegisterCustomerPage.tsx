@@ -13,7 +13,7 @@ const schema = z.object({
   firstName:    z.string().min(1, 'Required').max(100),
   lastName:     z.string().min(1, 'Required').max(100),
   email:        z.string().email('Invalid email'),
-  phone:        z.string().regex(/^\+[1-9]\d{1,14}$/, 'Phone must start with country code (e.g. +919876543210)'),
+  phone:        z.string().regex(/^\+91\d{10}$/, 'Enter a valid Indian number (e.g. +919876543210)'),
   password:     z.string().min(8, 'Minimum 8 characters'),
   referralCode: z.string().max(20).optional().or(z.literal('')),
 });
@@ -67,7 +67,7 @@ export default function RegisterCustomerPage() {
               <Input label="Last name" {...register('lastName')} error={errors.lastName?.message} />
             </div>
             <Input label="Email" type="email" {...register('email')} error={errors.email?.message} />
-            <Input label="Phone" placeholder="+919876543210" maxLength={16} {...registerPhone('phone')} error={errors.phone?.message} />
+            <Input label="Phone" placeholder="+919876543210" maxLength={13} {...registerPhone('phone')} error={errors.phone?.message} />
             <Input label="Password" type="password" showToggle {...register('password')} error={errors.password?.message} />
             <Input label="Referral code (optional)" {...register('referralCode')} error={errors.referralCode?.message} />
             <Button type="submit" isLoading={isSubmitting} className="w-full" size="lg">

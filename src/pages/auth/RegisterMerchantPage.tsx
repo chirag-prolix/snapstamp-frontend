@@ -12,13 +12,13 @@ const schema = z.object({
   firstName:              z.string().min(1, 'Required'),
   lastName:               z.string().min(1, 'Required'),
   email:                  z.string().email('Invalid email'),
-  phone:                  z.string().regex(/^\+[1-9]\d{1,14}$/, 'Phone must start with country code (e.g. +919876543210)'),
+  phone:                  z.string().regex(/^\+91\d{10}$/, 'Enter a valid Indian number (e.g. +919876543210)'),
   password:               z.string().min(8, 'Minimum 8 characters'),
   businessName:           z.string().min(1, 'Required'),
   city:                   z.string().min(1, 'Required'),
   state:                  z.string().min(1, 'Required'),
   address:                z.string().min(1, 'Required'),
-  phoneForBusiness:       z.string().regex(/^\+[1-9]\d{1,14}$/, 'Phone must start with country code (e.g. +919876543210)'),
+  phoneForBusiness:       z.string().regex(/^\+91\d{10}$/, 'Enter a valid Indian number (e.g. +919876543210)'),
   taxId:                  z.string().min(1, 'Required'),
   bankAccountNumber:      z.string().min(1, 'Required'),
   bankIfscCode:           z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Invalid IFSC (e.g. HDFC0001234)'),
@@ -72,7 +72,7 @@ export default function RegisterMerchantPage() {
               </div>
               <div className="grid grid-cols-2 gap-4 mt-4">
                 <Input label="Email" type="email" {...register('email')} error={errors.email?.message} />
-                <Input label="Phone" placeholder="+919876543210" maxLength={16} {...registerPhone('phone')} error={errors.phone?.message} />
+                <Input label="Phone" placeholder="+919876543210" maxLength={13} {...registerPhone('phone')} error={errors.phone?.message} />
               </div>
               <div className="mt-4">
                 <Input label="Password" type="password" showToggle {...register('password')} error={errors.password?.message} />
@@ -88,7 +88,7 @@ export default function RegisterMerchantPage() {
                   <Input label="State" {...register('state')} error={errors.state?.message} />
                 </div>
                 <Input label="Address" {...register('address')} error={errors.address?.message} />
-                <Input label="Business phone" placeholder="+919876543210" maxLength={16} {...registerPhone('phoneForBusiness')} error={errors.phoneForBusiness?.message} />
+                <Input label="Business phone" placeholder="+919876543210" maxLength={13} {...registerPhone('phoneForBusiness')} error={errors.phoneForBusiness?.message} />
                 <Input label="Tax ID / GST" {...register('taxId')} error={errors.taxId?.message} />
               </div>
             </section>
