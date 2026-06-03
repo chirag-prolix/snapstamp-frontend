@@ -55,8 +55,8 @@ export default function RegisterCustomerPage() {
               <Input label="Last name" {...register('lastName')} error={errors.lastName?.message} />
             </div>
             <Input label="Email" type="email" {...register('email')} error={errors.email?.message} />
-            <Input label="Phone" placeholder="+919876543210" {...register('phone')} error={errors.phone?.message} />
-            <Input label="Password" type="password" {...register('password')} error={errors.password?.message} />
+            <Input label="Phone" placeholder="+919876543210" maxLength={16} {...register('phone')} error={errors.phone?.message} />
+            <Input label="Password" type="password" showToggle {...register('password')} error={errors.password?.message} />
             <Input label="Referral code (optional)" {...register('referralCode')} error={errors.referralCode?.message} />
             <Button type="submit" isLoading={isSubmitting} className="w-full" size="lg">
               Create account

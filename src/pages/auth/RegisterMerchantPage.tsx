@@ -60,10 +60,10 @@ export default function RegisterMerchantPage() {
               </div>
               <div className="grid grid-cols-2 gap-4 mt-4">
                 <Input label="Email" type="email" {...register('email')} error={errors.email?.message} />
-                <Input label="Phone" placeholder="+919876543210" {...register('phone')} error={errors.phone?.message} />
+                <Input label="Phone" placeholder="+919876543210" maxLength={16} {...register('phone')} error={errors.phone?.message} />
               </div>
               <div className="mt-4">
-                <Input label="Password" type="password" {...register('password')} error={errors.password?.message} />
+                <Input label="Password" type="password" showToggle {...register('password')} error={errors.password?.message} />
               </div>
             </section>
 
@@ -76,7 +76,7 @@ export default function RegisterMerchantPage() {
                   <Input label="State" {...register('state')} error={errors.state?.message} />
                 </div>
                 <Input label="Address" {...register('address')} error={errors.address?.message} />
-                <Input label="Business phone" placeholder="+919876543210" {...register('phoneForBusiness')} error={errors.phoneForBusiness?.message} />
+                <Input label="Business phone" placeholder="+919876543210" maxLength={16} {...register('phoneForBusiness')} error={errors.phoneForBusiness?.message} />
                 <Input label="Tax ID / GST" {...register('taxId')} error={errors.taxId?.message} />
               </div>
             </section>
