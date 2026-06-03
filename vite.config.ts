@@ -12,8 +12,8 @@ export default defineConfig({
     host: 'snapstamp.local',
     port: 5173,
     https: {
-      key:  fs.readFileSync(path.join(certsDir, 'api.snapstamp.local+1-key.pem')),
-      cert: fs.readFileSync(path.join(certsDir, 'api.snapstamp.local+1.pem')),
+      key:  fs.readFileSync(path.join(certsDir, 'snapstamp.local-key.pem')),
+      cert: fs.readFileSync(path.join(certsDir, 'snapstamp.local.pem')),
     },
   },
 })
