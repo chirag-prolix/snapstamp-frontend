@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { getStampCards } from '../../api/customer';
-import { getRewards } from '../../api/customer';
+import { getStampCards, getRewards, getReferralStats } from '../../api/customer';
 import { AppShell } from '../../components/layout/AppShell';
 import { StampCardWidget } from '../../components/shared/StampCardWidget';
 import { RewardCard } from '../../components/shared/RewardCard';
@@ -24,6 +23,11 @@ export default function CustomerDashboard() {
     queryFn: () => getRewards(),
   });
 
+  const { data: referralStats } = useQuery({
+    queryKey: ['referralStats'],
+    queryFn: getReferralStats,
+  });
+
   const activeCards = cards?.filter(c => c.status === 'ACTIVE') ?? [];
   const totalStamps = cards?.reduce((s, c) => s + c.currentStampCount, 0) ?? 0;
 
@@ -35,7 +39,7 @@ export default function CustomerDashboard() {
           <StatCard label="Active Cards" value={activeCards.length} icon="📇" />
           <StatCard label="Total Stamps" value={totalStamps} icon="⭐" />
           <StatCard label="Tier" value={customer?.tier ?? '—'} icon="🏅" />
-          <StatCard label="Referrals" value={customer?.referralCode ? '—' : '—'} icon="🔗" />
+          <StatCard label="Referrals" value={referralStats?.referralCount ?? 0} icon="🔗" />
         </div>
 
         {/* Active stamp cards */}

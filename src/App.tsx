@@ -61,6 +61,19 @@ function RequireRole({ role: required, children }: { role: string; children: Rea
   return <>{children}</>;
 }
 
+function GuestOnly({ children }: { children: ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+  if (isAuthenticated) return <RootRedirect />;
+  return <>{children}</>;
+}
+
 function RequireMerchantAccess({ children }: { children: ReactNode }) {
   const { user, role } = useAuth();
   if (role !== 'ROLE_MERCHANT') return <>{children}</>;
@@ -74,10 +87,10 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<RootRedirect />} />
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/login" element={<GuestOnly><LoginPage /></GuestOnly>} />
       <Route path="/complete-profile" element={<CompleteProfilePage />} />
-      <Route path="/register/customer" element={<RegisterCustomerPage />} />
-      <Route path="/register/merchant" element={<RegisterMerchantPage />} />
+      <Route path="/register/customer" element={<GuestOnly><RegisterCustomerPage /></GuestOnly>} />
+      <Route path="/register/merchant" element={<GuestOnly><RegisterMerchantPage /></GuestOnly>} />
 
       {/* Customer */}
       <Route path="/customer" element={<RequireRole role="ROLE_CUSTOMER"><CustomerDashboard /></RequireRole>} />
